@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Unified Inbox
+
+A multi-channel customer outreach platform built with Next.js that aggregates messages from SMS, WhatsApp, email, and social media into a single unified inbox.
+
+## Features
+
+- 📱 **Multi-Channel Support**: SMS, WhatsApp, Email, Twitter DMs, Facebook Messenger
+- 💬 **Real-time Collaboration**: Team notes, @mentions, presence indicators
+- 📊 **Analytics Dashboard**: Response times, channel performance, engagement metrics
+- 🔄 **Message Scheduling**: Automated follow-ups and template messages
+- 👥 **Team Management**: Role-based access control (Viewer, Editor, Admin)
+- 🔒 **Secure**: OAuth integration, webhook validation, audit logging
+
+## Tech Stack
+
+- **Frontend/Backend**: Next.js 16 with App Router and TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Better Auth with Google OAuth
+- **Styling**: Tailwind CSS v4
+- **Real-time**: WebSockets for live updates
+- **Integrations**: Twilio (SMS/WhatsApp), Resend (Email), Social Media APIs
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+- Twilio account (for SMS/WhatsApp)
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd unified-inbox
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.example .env.local
+# Edit .env.local with your configuration
+```
+
+4. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm run type-check` - Run TypeScript type checking
+- `npm run precheck` - Runs all quality checks without making changes
+- `npm run precheck:fix` - Runs all quality checks and automatically fixes issues
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+unified-inbox/
+├── app/                 # Next.js App Router pages and API routes
+├── components/          # Reusable React components
+├── lib/                 # Utilities, services, and integrations
+├── prisma/              # Database schema and migrations
+├── styles/              # Global styles and Tailwind config
+└── tests/               # Test files
+```
