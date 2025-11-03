@@ -19,6 +19,7 @@ model User {
   accounts              Account[]
   sessions              Session[]
   assignedConversations Conversation[]
+  sentMessages          Message[]
 
   @@map("users")
 }
@@ -79,6 +80,7 @@ model Contact {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   conversations Conversation[]
+  messages      Message[]
 
   @@map("contacts")
 }
@@ -93,6 +95,7 @@ model Conversation {
   updatedAt    DateTime           @updatedAt
   contact      Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
   assignedUser User?              @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+  messages     Message[]
 
   @@map("conversations")
 }
@@ -114,4 +117,48 @@ enum Priority {
   NORMAL
   HIGH
   URGENT
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  conversationId String
+  contactId      String
+  senderId       String?
+  channel        Channel
+  direction      Direction
+  content        String
+  metadata       Json?
+  attachments    Json?
+  status         MessageStatus @default(SENT)
+  scheduledFor   DateTime?
+  sentAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact        Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sender         User?         @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@map("messages")
+}
+
+enum Channel {
+  SMS
+  WHATSAPP
+  EMAIL
+  TWITTER
+  FACEBOOK
+}
+
+enum Direction {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  DELIVERED
+  READ
+  FAILED
 }
