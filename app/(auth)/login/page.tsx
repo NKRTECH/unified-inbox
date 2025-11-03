@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "../../../lib/auth-client";
 import Link from "next/link";
+import GoogleSignInButton from "../../../components/GoogleSignInButton";
+import { errorContains } from "../../../lib/error-utils";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,9 +38,10 @@ export default function LoginPage() {
         // Success - redirect to inbox using Next.js router
         router.push("/inbox");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // eslint-disable-next-line no-console
       console.error("Login error:", err);
-      if (err.message?.includes("database")) {
+      if (errorContains(err, "database")) {
         setError("Database connection error. Please try again later.");
       } else {
         setError("Invalid email or password");
@@ -49,7 +52,22 @@ export default function LoginPage() {
   };
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="mt-8 space-y-6">
+      {/* Google Sign-In */}
+      <GoogleSignInButton />
+      
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-gray-50 text-gray-500">Or continue with email</span>
+        </div>
+      </div>
+
+      {/* Email/Password Form */}
+      <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="rounded-md shadow-sm -space-y-px">
         <div>
           <label htmlFor="email" className="sr-only">
@@ -97,14 +115,15 @@ export default function LoginPage() {
         </button>
       </div>
 
-      <div className="text-center">
-        <Link
-          href="/register"
-          className="font-medium text-indigo-600 hover:text-indigo-500"
-        >
-          Don&apos;t have an account? Sign up
-        </Link>
-      </div>
-    </form>
+        <div className="text-center">
+          <Link
+            href="/register"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Don&apos;t have an account? Sign up
+          </Link>
+        </div>
+      </form>
+    </div>
   );
 }
