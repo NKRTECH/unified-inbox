@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+*.test.js
+*.spec.js
+/tests/coverage/
+jest-coverage/
+.nyc_output/
 
 # next.js
 /.next/
@@ -102,4 +107,9 @@ tmp/
 temp/
 
 client_secret_*.json
-lib/integrations/examples/
+
+# Test artifacts and test directory
+tests/
+test-results/
+test-output/
+*.test.log
