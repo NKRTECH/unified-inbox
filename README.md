@@ -50,7 +50,11 @@ cp .env.example .env.local
 # Edit .env.local with your configuration
 ```
 
-4. Start the development server:
+4. Set up Google OAuth (required for authentication):
+
+See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for detailed instructions on configuring Google OAuth.
+
+5. Start the development server:
 
 ```bash
 npm run dev

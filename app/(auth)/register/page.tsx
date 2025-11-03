@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUp } from "../../../lib/auth-client";
 import Link from "next/link";
+import GoogleSignInButton from "../../../components/GoogleSignInButton";
+import { errorContains } from "../../../lib/error-utils";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,11 +49,12 @@ export default function RegisterPage() {
         // Success - redirect to inbox using Next.js router
         router.push("/inbox");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // eslint-disable-next-line no-console
       console.error("Registration error:", err);
-      if (err.message?.includes("Password is too short")) {
+      if (errorContains(err, "Password is too short")) {
         setError("Password must be at least 8 characters long");
-      } else if (err.message?.includes("database")) {
+      } else if (errorContains(err, "database")) {
         setError("Database connection error. Please try again later.");
       } else {
         setError("Failed to create account. Please try again.");
@@ -62,7 +65,22 @@ export default function RegisterPage() {
   };
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="mt-8 space-y-6">
+      {/* Google Sign-In */}
+      <GoogleSignInButton />
+      
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-gray-50 text-gray-500">Or create account with email</span>
+        </div>
+      </div>
+
+      {/* Email/Password Form */}
+      <form className="space-y-6" onSubmit={handleSubmit}>
       <div className="rounded-md shadow-sm -space-y-px">
         <div>
           <label htmlFor="name" className="sr-only">
@@ -130,14 +148,15 @@ export default function RegisterPage() {
         </button>
       </div>
 
-      <div className="text-center">
-        <Link
-          href="/login"
-          className="font-medium text-indigo-600 hover:text-indigo-500"
-        >
-          Already have an account? Sign in
-        </Link>
-      </div>
-    </form>
+        <div className="text-center">
+          <Link
+            href="/login"
+            className="font-medium text-indigo-600 hover:text-indigo-500"
+          >
+            Already have an account? Sign in
+          </Link>
+        </div>
+      </form>
+    </div>
   );
 }
