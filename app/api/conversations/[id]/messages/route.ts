@@ -4,14 +4,14 @@ import { MessageQuerySchema } from '@/lib/types/message';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id: conversationId } = params;
+    const { id: conversationId } = await params;
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
     
@@ -112,6 +112,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'GET /api/conversations/[id]/messages');
   }
 }

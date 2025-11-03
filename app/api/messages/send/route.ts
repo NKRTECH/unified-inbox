@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Create the message with appropriate metadata
     const messageData = {
       ...validatedData,
-      status: validatedData.scheduledFor ? 'SCHEDULED' : 'SENT',
+      status: validatedData.scheduledFor ? 'SCHEDULED' as const : 'SENT' as const,
       sentAt: validatedData.scheduledFor ? null : new Date(),
       metadata: generateChannelMetadata(validatedData.channel, contact, validatedData.metadata),
     };
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'POST /api/messages/send');
   }
 }
 
