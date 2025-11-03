@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'GET /api/messages');
   }
 }
 
@@ -194,6 +194,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'POST /api/messages');
   }
 }

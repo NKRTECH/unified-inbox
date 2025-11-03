@@ -4,14 +4,14 @@ import { UpdateMessageSchema } from '@/lib/types/message';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const message = await prisma.message.findUnique({
       where: { id },
@@ -47,13 +47,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(message);
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'GET /api/messages/[id]');
   }
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const validatedData = UpdateMessageSchema.parse(body);
 
@@ -106,13 +106,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(message);
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'PUT /api/messages/[id]');
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if message exists
     const existingMessage = await prisma.message.findUnique({
@@ -130,6 +130,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ message: 'Message deleted successfully' });
   } catch (error) {
-    return handleApiError(error);
+    return handleApiError(error, 'DELETE /api/messages/[id]');
   }
 }

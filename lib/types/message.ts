@@ -17,7 +17,7 @@ export const CreateMessageSchema = z.object({
   channel: ChannelEnum,
   direction: DirectionEnum,
   content: z.string().min(1, 'Message content is required'),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   attachments: z.array(z.object({
     url: z.string().url(),
     type: z.string(),
@@ -31,7 +31,7 @@ export const CreateMessageSchema = z.object({
 export const UpdateMessageSchema = z.object({
   content: z.string().min(1).optional(),
   status: MessageStatusEnum.optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   attachments: z.array(z.object({
     url: z.string().url(),
     type: z.string(),
