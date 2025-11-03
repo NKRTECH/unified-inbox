@@ -17,9 +17,10 @@ model User {
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   accounts              Account[]
-  sessions              Session[]
   assignedConversations Conversation[]
   sentMessages          Message[]
+  notes                 Note[]
+  sessions              Session[]
 
   @@map("users")
 }
@@ -93,11 +94,65 @@ model Conversation {
   assignedTo   String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
-  contact      Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
   assignedUser User?              @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+  contact      Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
   messages     Message[]
+  notes        Note[]
 
   @@map("conversations")
+}
+
+model Message {
+  id               String            @id @default(cuid())
+  conversationId   String
+  contactId        String
+  senderId         String?
+  channel          Channel
+  direction        Direction
+  content          String
+  metadata         Json?
+  attachments      Json?
+  status           MessageStatus     @default(SENT)
+  scheduledFor     DateTime?
+  sentAt           DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  contact          Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  conversation     Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender           User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  scheduledMessage ScheduledMessage?
+
+  @@map("messages")
+}
+
+model Note {
+  id             String       @id @default(cuid())
+  conversationId String
+  authorId       String
+  content        String
+  isPrivate      Boolean      @default(false)
+  mentions       String[]
+  encryptedData  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  author         User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model ScheduledMessage {
+  id           String         @id @default(cuid())
+  messageId    String         @unique
+  scheduledFor DateTime
+  status       ScheduleStatus @default(PENDING)
+  templateId   String?
+  variables    Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  message      Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("scheduled_messages")
 }
 
 enum UserRole {
@@ -117,28 +172,6 @@ enum Priority {
   NORMAL
   HIGH
   URGENT
-}
-
-model Message {
-  id             String        @id @default(cuid())
-  conversationId String
-  contactId      String
-  senderId       String?
-  channel        Channel
-  direction      Direction
-  content        String
-  metadata       Json?
-  attachments    Json?
-  status         MessageStatus @default(SENT)
-  scheduledFor   DateTime?
-  sentAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  contact        Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  sender         User?         @relation(fields: [senderId], references: [id], onDelete: SetNull)
-
-  @@map("messages")
 }
 
 enum Channel {
@@ -161,4 +194,11 @@ enum MessageStatus {
   DELIVERED
   READ
   FAILED
+}
+
+enum ScheduleStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
 }
