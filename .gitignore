@@ -102,3 +102,4 @@ tmp/
 temp/
 
 client_secret_*.json
+lib/integrations/examples/
