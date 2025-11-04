@@ -270,6 +270,32 @@ export class MessageService {
   }
 
   /**
+   * Update message status by external ID (Twilio MessageSid)
+   */
+  async updateMessageStatusByExternalId(externalId: string, status: MessageStatus) {
+    try {
+      const updated = await prisma.message.updateMany({
+        where: { 
+          metadata: {
+            path: ['sendResult', 'messageId'],
+            equals: externalId
+          }
+        },
+        data: { 
+          status,
+          updatedAt: new Date()
+        }
+      });
+
+      console.log(`Updated ${updated.count} messages with external ID ${externalId} to status ${status}`);
+      return updated;
+    } catch (error) {
+      console.error('Failed to update message status by external ID:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get conversation messages
    */
   async getConversationMessages(conversationId: string, limit = 50, offset = 0) {
