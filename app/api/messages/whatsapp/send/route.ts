@@ -114,8 +114,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // Import to ensure registration
-    await import('@/lib/integrations/twilio');
-    const { createSender } = await import('@/lib/integrations/factory');
+    const { createSender } = await import('@/lib/integrations');
     const sender = createSender(ChannelType.WHATSAPP);
     const features = sender.getSupportedFeatures();
     

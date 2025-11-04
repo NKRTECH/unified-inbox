@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const { createSender } = await import('@/lib/integrations/factory');
+    const { createSender } = await import('@/lib/integrations');
     const sender = createSender(ChannelType.SMS);
     const features = sender.getSupportedFeatures();
     
