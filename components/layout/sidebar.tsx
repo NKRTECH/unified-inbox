@@ -8,7 +8,8 @@ import {
   ChartBarIcon, 
   Cog6ToothIcon,
   ChatBubbleLeftRightIcon,
-  PuzzlePieceIcon
+  PuzzlePieceIcon,
+  PhoneIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Integrations', href: '/settings/integrations', icon: PuzzlePieceIcon },
   { name: 'Test Composer', href: '/test-composer', icon: ChatBubbleLeftRightIcon },
+  { name: 'VoIP Test', href: '/voip-test', icon: PhoneIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 

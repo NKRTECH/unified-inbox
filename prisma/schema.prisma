@@ -21,6 +21,7 @@ model User {
   sentMessages          Message[]
   notes                 Note[]
   sessions              Session[]
+  initiatedCalls        Call[]
 
   @@map("users")
 }
@@ -82,6 +83,7 @@ model Contact {
   updatedAt     DateTime       @updatedAt
   conversations Conversation[]
   messages      Message[]
+  calls         Call[]
 
   @@map("contacts")
 }
@@ -155,6 +157,24 @@ model ScheduledMessage {
   @@map("scheduled_messages")
 }
 
+model Call {
+  id             String    @id @default(cuid())
+  contactId      String
+  initiatorId    String?
+  twilioCallSid  String?   @unique
+  direction      Direction
+  status         CallStatus @default(INITIATED)
+  duration       Int?      // Duration in seconds
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  contact        Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  initiator      User?     @relation(fields: [initiatorId], references: [id], onDelete: SetNull)
+
+  @@map("calls")
+}
+
 enum UserRole {
   VIEWER
   EDITOR
@@ -201,4 +221,14 @@ enum ScheduleStatus {
   SENT
   FAILED
   CANCELLED
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  ACTIVE
+  COMPLETED
+  FAILED
+  CANCELLED
+  NO_ANSWER
 }
