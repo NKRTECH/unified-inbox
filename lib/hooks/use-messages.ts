@@ -192,17 +192,17 @@ export function useSendMessage() {
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ 
-        queryKey: messageKeys.infinite({ conversationId: newMessage.conversationId }) 
+        queryKey: messageKeys.infinite({ conversationId: newMessage.conversationId, limit: 50 }) 
       });
 
       // Snapshot the previous value
       const previousMessages = queryClient.getQueryData(
-        messageKeys.infinite({ conversationId: newMessage.conversationId })
+        messageKeys.infinite({ conversationId: newMessage.conversationId, limit: 50 })
       );
 
       // Optimistically update the infinite query
       queryClient.setQueryData(
-        messageKeys.infinite({ conversationId: newMessage.conversationId }),
+        messageKeys.infinite({ conversationId: newMessage.conversationId, limit: 50 }),
         (old: any) => {
           if (!old) return old;
           
@@ -210,7 +210,7 @@ export function useSendMessage() {
           if (newPages[0]) {
             newPages[0] = {
               ...newPages[0],
-              messages: [optimisticMessage, ...newPages[0].messages],
+              messages: [...newPages[0].messages, optimisticMessage],
             };
           }
           
@@ -227,7 +227,7 @@ export function useSendMessage() {
       // If the mutation fails, use the context to roll back
       if (context?.previousMessages) {
         queryClient.setQueryData(
-          messageKeys.infinite({ conversationId: newMessage.conversationId }),
+          messageKeys.infinite({ conversationId: newMessage.conversationId, limit: 50 }),
           context.previousMessages
         );
       }
@@ -235,7 +235,7 @@ export function useSendMessage() {
     onSuccess: (sentMessage, variables, context) => {
       // Replace optimistic message with real message
       queryClient.setQueryData(
-        messageKeys.infinite({ conversationId: sentMessage.conversationId }),
+        messageKeys.infinite({ conversationId: sentMessage.conversationId, limit: 50 }),
         (old: any) => {
           if (!old) return old;
           
@@ -259,9 +259,12 @@ export function useSendMessage() {
     onSettled: (data, error, variables) => {
       // Always refetch to ensure consistency
       queryClient.invalidateQueries({ 
-        queryKey: messageKeys.infinite({ conversationId: variables.conversationId }) 
+        queryKey: messageKeys.infinite({ conversationId: variables.conversationId, limit: 50 }) 
       });
       queryClient.invalidateQueries({ queryKey: messageKeys.lists() });
+      
+      // Also invalidate conversations to update last message
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });
 }
@@ -342,7 +345,7 @@ export function useMessageRealTimeUpdates(conversationId: string) {
   const addMessage = (message: MessageResponse) => {
     // Add to infinite query
     queryClient.setQueryData(
-      messageKeys.infinite({ conversationId }),
+      messageKeys.infinite({ conversationId, limit: 50 }),
       (old: any) => {
         if (!old) return old;
         
@@ -353,7 +356,7 @@ export function useMessageRealTimeUpdates(conversationId: string) {
           if (!messageExists) {
             newPages[0] = {
               ...newPages[0],
-              messages: [message, ...newPages[0].messages],
+              messages: [...newPages[0].messages, message],
             };
           }
         }
@@ -372,7 +375,7 @@ export function useMessageRealTimeUpdates(conversationId: string) {
   const updateMessage = (message: MessageResponse) => {
     // Update in infinite queries
     queryClient.setQueryData(
-      messageKeys.infinite({ conversationId }),
+      messageKeys.infinite({ conversationId, limit: 50 }),
       (old: any) => {
         if (!old) return old;
         

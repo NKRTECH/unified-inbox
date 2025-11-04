@@ -2,19 +2,22 @@
 
 import { useEffect, useRef } from 'react';
 import { useConversationMessages } from '@/lib/hooks';
+import { useWebSocket } from '@/lib/hooks/use-websocket';
 import { MessageItem } from './message-item';
 import { MessageThreadSkeleton } from './message-thread-skeleton';
 import { Button } from '@/components/ui/button';
 
 interface MessageThreadProps {
   conversationId: string;
+  userId: string;
 }
 
 /**
  * MessageThread component displays conversation messages
  * with channel indicators, timestamps, and direction (inbound/outbound)
+ * Includes real-time WebSocket updates for live message delivery
  */
-export function MessageThread({ conversationId }: MessageThreadProps) {
+export function MessageThread({ conversationId, userId }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const {
     data,
@@ -24,6 +27,20 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
     isLoading,
     error,
   } = useConversationMessages(conversationId);
+
+  // WebSocket connection for real-time updates
+  const { isConnected, joinConversation, leaveConversation } = useWebSocket({
+    userId,
+    enabled: true,
+  });
+
+  // Join conversation room when component mounts
+  useEffect(() => {
+    if (conversationId) {
+      joinConversation(conversationId);
+      return () => leaveConversation(conversationId);
+    }
+  }, [conversationId, joinConversation, leaveConversation]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -82,6 +99,20 @@ export function MessageThread({ conversationId }: MessageThreadProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Real-time connection indicator */}
+      <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+          />
+          <span className="text-xs text-gray-600">
+            {isConnected ? 'Live updates enabled' : 'Connecting...'}
+          </span>
+        </div>
+      </div>
+
       {/* Load More Button (at top for older messages) */}
       {hasNextPage && (
         <div className="p-4 border-b border-gray-200 flex justify-center">

@@ -8,3 +8,7 @@ export * from './use-voice-call';
 
 // Query management hooks
 export * from './use-query-invalidation';
+
+// Real-time hooks
+export * from './use-websocket';
+export * from './use-typing-indicator';

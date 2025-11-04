@@ -13,3 +13,6 @@ export { MessageThreadSkeleton } from './message-thread-skeleton';
 // Composer components
 export { MessageComposerInline } from './message-composer-inline';
 export { default as MessageComposer } from './message-composer';
+
+// Real-time components
+export { TypingIndicator } from './typing-indicator';

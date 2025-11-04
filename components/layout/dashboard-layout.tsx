@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuthStatus, useWebSocket } from '@/lib/hooks';
 import Sidebar from './sidebar';
 import Header from './header';
 
@@ -10,6 +11,8 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user } = useAuthStatus();
+  useWebSocket({ userId: user?.id || '', enabled: !!user?.id });
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">

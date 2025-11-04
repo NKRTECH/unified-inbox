@@ -38,6 +38,8 @@ export function QueryUsageExample() {
         channel: 'SMS',
         direction: 'OUTBOUND',
         content: 'Hello from React Query!',
+        status: 'SENT',
+        senderId: 'user-id-placeholder', // Replace with actual user ID
       });
     } catch (error) {
       console.error('Failed to send message:', error);

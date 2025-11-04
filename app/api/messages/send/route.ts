@@ -2,30 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CreateMessageSchema } from '@/lib/types/message';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 
 const SendMessageSchema = CreateMessageSchema.extend({
   // Override direction to always be OUTBOUND for sent messages
   direction: z.literal('OUTBOUND'),
-  // Require senderId for outbound messages
-  senderId: z.string().cuid(),
+  // SenderId is optional - will be determined from session
+  senderId: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user from session
+    const session = await auth.api.getSession({ headers: request.headers });
+    
+    if (!session?.user) {
+      return createErrorResponse('Unauthorized - Please log in', 401);
+    }
+
     const body = await request.json();
     const validatedData = SendMessageSchema.parse(body);
 
-    // Verify that conversation, contact, and sender exist
-    const [conversation, contact, sender] = await Promise.all([
+    // Verify that conversation and contact exist
+    const [conversation, contact] = await Promise.all([
       prisma.conversation.findUnique({
         where: { id: validatedData.conversationId },
       }),
       prisma.contact.findUnique({
         where: { id: validatedData.contactId },
-      }),
-      prisma.user.findUnique({
-        where: { id: validatedData.senderId },
       }),
     ]);
 
@@ -37,9 +42,8 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Contact not found', 404);
     }
 
-    if (!sender) {
-      return createErrorResponse('Sender not found', 404);
-    }
+    // Use the authenticated user's ID as the sender
+    const senderId = session.user.id;
 
     if (conversation.contactId !== validatedData.contactId) {
       return createErrorResponse('Contact does not belong to this conversation', 400);
@@ -54,6 +58,7 @@ export async function POST(request: NextRequest) {
     // Create the message with appropriate metadata
     const messageData = {
       ...validatedData,
+      senderId, // Use the authenticated user's ID
       status: validatedData.scheduledFor ? 'SCHEDULED' as const : 'SENT' as const,
       sentAt: validatedData.scheduledFor ? null : new Date(),
       metadata: generateChannelMetadata(validatedData.channel, contact, validatedData.metadata),
@@ -97,10 +102,48 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: In a real implementation, this is where you would:
-    // 1. Queue the message for actual sending via the appropriate channel
-    // 2. Handle scheduled messages by adding them to a job queue
-    // 3. Update message status based on delivery results
+    // Actually send the message via the appropriate channel
+    if (!validatedData.scheduledFor) {
+      try {
+        const { MessageService } = await import('@/lib/services/message-service');
+        const messageService = new MessageService();
+        
+        // Send via the integration
+        const sendResult = await messageService.sendMessage({
+          channel: validatedData.channel,
+          to: getRecipientForChannel(validatedData.channel, contact),
+          content: validatedData.content,
+          metadata: validatedData.metadata,
+          attachments: validatedData.attachments,
+        });
+
+        // Update message status based on send result
+        if (sendResult.success) {
+          await prisma.message.update({
+            where: { id: message.id },
+            data: {
+              status: 'SENT',
+              metadata: {
+                ...(message.metadata as any),
+                externalId: sendResult.messageId || sendResult.externalId,
+              },
+            },
+          });
+        } else {
+          await prisma.message.update({
+            where: { id: message.id },
+            data: { status: 'FAILED' },
+          });
+        }
+      } catch (sendError) {
+        console.error('Failed to send message via channel:', sendError);
+        // Update message status to failed
+        await prisma.message.update({
+          where: { id: message.id },
+          data: { status: 'FAILED' },
+        });
+      }
+    }
 
     return NextResponse.json(message, { status: 201 });
   } catch (error) {
@@ -134,6 +177,24 @@ function validateChannelRequirements(channel: string, contact: any): { valid: bo
   }
   
   return { valid: true };
+}
+
+function getRecipientForChannel(channel: string, contact: any): string {
+  switch (channel) {
+    case 'SMS':
+    case 'WHATSAPP':
+      return contact.phone;
+    case 'EMAIL':
+      return contact.email;
+    case 'TWITTER':
+      const socialHandles = contact.socialHandles as Record<string, any> || {};
+      return socialHandles.twitter;
+    case 'FACEBOOK':
+      const fbHandles = contact.socialHandles as Record<string, any> || {};
+      return fbHandles.facebook;
+    default:
+      return '';
+  }
 }
 
 function generateChannelMetadata(channel: string, contact: any, existingMetadata?: any): Record<string, any> {

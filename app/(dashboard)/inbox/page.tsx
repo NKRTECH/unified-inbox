@@ -1,26 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ConversationList, 
   MessageThread, 
   MessageThreadHeader,
   MessageComposerInline 
 } from '@/components/inbox';
-import { useConversation } from '@/lib/hooks';
+import { useConversation, useWebSocket, useAuthStatus } from '@/lib/hooks';
 
 export default function InboxPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>();
   const { data: selectedConversation } = useConversation(selectedConversationId || '');
+  const { user } = useAuthStatus();
+  
+  // WebSocket real-time updates - ENABLED
+  const { isConnected } = useWebSocket({
+    userId: user?.id || '',
+    enabled: !!user?.id,
+  });
 
   return (
     <div className="space-y-6">
       {/* Page header */}
       <div className="border-b border-gray-200 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Inbox</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Manage conversations across all channels
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Inbox</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Manage conversations across all channels
+            </p>
+          </div>
+          {/* Connection status indicator */}
+          {user && (
+            <div className="flex items-center gap-2 text-sm">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-gray-300'}`} />
+              <span className={isConnected ? 'text-green-600' : 'text-gray-500'}>
+                {isConnected ? 'Live' : 'Connecting...'}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main inbox content */}
@@ -41,7 +61,10 @@ export default function InboxPage() {
               <MessageThreadHeader conversationId={selectedConversationId} />
 
               {/* Messages */}
-              <MessageThread conversationId={selectedConversationId} />
+              <MessageThread 
+                conversationId={selectedConversationId}
+                userId={user?.id || ''}
+              />
 
               {/* Message composer */}
               <MessageComposerInline

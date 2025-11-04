@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useSendMessage } from '@/lib/hooks';
+import { useSendMessage, useAuthStatus } from '@/lib/hooks';
 import { Channel } from '@/lib/types/message';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ export function MessageComposerInline({
   const [channel, setChannel] = useState<Channel>(defaultChannel);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
+  const { user } = useAuthStatus();
   const sendMessage = useSendMessage();
 
   // Auto-resize textarea
@@ -72,6 +73,12 @@ export function MessageComposerInline({
   const handleSend = async () => {
     if (!content.trim() || sendMessage.isPending) return;
 
+    if (!user) {
+      console.error('Cannot send message: User not authenticated');
+      alert('Please log in to send messages');
+      return;
+    }
+
     try {
       await sendMessage.mutateAsync({
         conversationId,
@@ -79,6 +86,8 @@ export function MessageComposerInline({
         channel,
         direction: 'OUTBOUND',
         content: content.trim(),
+        status: 'SENT',
+        // senderId will be determined from session on the server
       });
 
       // Clear form on success
@@ -215,7 +224,7 @@ export function MessageComposerInline({
           {/* Send Button */}
           <Button
             onClick={handleSend}
-            disabled={!content.trim() || isOverLimit || sendMessage.isPending}
+            disabled={!content.trim() || isOverLimit || sendMessage.isPending || !user}
             size="sm"
             className="px-4"
           >
