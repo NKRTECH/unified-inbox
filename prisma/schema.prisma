@@ -17,11 +17,11 @@ model User {
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
   accounts              Account[]
+  initiatedCalls        Call[]
   assignedConversations Conversation[]
   sentMessages          Message[]
   notes                 Note[]
   sessions              Session[]
-  initiatedCalls        Call[]
 
   @@map("users")
 }
@@ -81,9 +81,9 @@ model Contact {
   customFields  Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  calls         Call[]
   conversations Conversation[]
   messages      Message[]
-  calls         Call[]
 
   @@map("contacts")
 }
@@ -96,7 +96,7 @@ model Conversation {
   assignedTo   String?
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
-  assignedUser User?              @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+  assignedUser User?              @relation(fields: [assignedTo], references: [id])
   contact      Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
   messages     Message[]
   notes        Note[]
@@ -121,7 +121,7 @@ model Message {
   updatedAt        DateTime          @updatedAt
   contact          Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade)
   conversation     Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender           User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  sender           User?             @relation(fields: [senderId], references: [id])
   scheduledMessage ScheduledMessage?
 
   @@map("messages")
@@ -144,33 +144,50 @@ model Note {
 }
 
 model ScheduledMessage {
-  id           String         @id @default(cuid())
-  messageId    String         @unique
+  id           String           @id @default(cuid())
+  messageId    String           @unique
   scheduledFor DateTime
-  status       ScheduleStatus @default(PENDING)
+  status       ScheduleStatus   @default(PENDING)
   templateId   String?
   variables    Json?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  message      Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  message      Message          @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  template     MessageTemplate? @relation(fields: [templateId], references: [id])
 
   @@map("scheduled_messages")
 }
 
+model MessageTemplate {
+  id                String             @id @default(cuid())
+  name              String
+  content           String
+  description       String?
+  variables         String[]
+  category          String?
+  isActive          Boolean            @default(true)
+  createdBy         String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  scheduledMessages ScheduledMessage[]
+
+  @@map("message_templates")
+}
+
 model Call {
-  id             String    @id @default(cuid())
-  contactId      String
-  initiatorId    String?
-  twilioCallSid  String?   @unique
-  direction      Direction
-  status         CallStatus @default(INITIATED)
-  duration       Int?      // Duration in seconds
-  startedAt      DateTime?
-  endedAt        DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  contact        Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  initiator      User?     @relation(fields: [initiatorId], references: [id], onDelete: SetNull)
+  id            String     @id @default(cuid())
+  contactId     String
+  initiatorId   String?
+  twilioCallSid String?    @unique
+  direction     Direction
+  status        CallStatus @default(INITIATED)
+  duration      Int?
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  contact       Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  initiator     User?      @relation(fields: [initiatorId], references: [id])
 
   @@map("calls")
 }
