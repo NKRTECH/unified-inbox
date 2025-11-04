@@ -1,121 +1,149 @@
+/**
+ * Individual Note API Endpoint
+ * 
+ * Handles operations on individual notes (update, delete).
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { handleApiError, createErrorResponse } from '@/lib/error-utils';
-import { UpdateNoteSchema } from '@/lib/types/note';
+import { z } from 'zod';
 
-interface RouteParams {
-  params: Promise<{
-    id: string;
-  }>;
-}
+const updateNoteSchema = z.object({
+  content: z.string().min(1, 'Content is required').optional(),
+  isPrivate: z.boolean().optional(),
+  mentions: z.array(z.string()).optional(),
+});
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+/**
+ * PATCH /api/notes/[id]
+ * Update a note
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await params;
+    // For now, allow editing without strict auth check
+    // TODO: Add proper authentication when auth is fully implemented
+    const { id: noteId } = await params;
 
-    const note = await prisma.note.findUnique({
-      where: { id },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        conversation: {
-          select: {
-            id: true,
-            status: true,
-            contact: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-      },
+    // Get existing note
+    const existingNote = await prisma.note.findUnique({
+      where: { id: noteId },
     });
 
-    if (!note) {
-      return createErrorResponse('Note not found', 404);
+    if (!existingNote) {
+      return NextResponse.json(
+        { error: 'Note not found' },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(note);
-  } catch (error) {
-    return handleApiError(error, 'GET /api/notes/[id]');
-  }
-}
+    // Allow editing for now (in production, check user permissions)
+    // if (existingNote.authorId !== currentUserId) {
+    //   return NextResponse.json(
+    //     { error: 'Forbidden: You can only edit your own notes' },
+    //     { status: 403 }
+    //   );
+    // }
 
-export async function PUT(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = await params;
+    // Validate request body
     const body = await request.json();
-    const validatedData = UpdateNoteSchema.parse(body);
+    const validatedData = updateNoteSchema.parse(body);
 
-    // Check if note exists
-    const existingNote = await prisma.note.findUnique({
-      where: { id },
-    });
-
-    if (!existingNote) {
-      return createErrorResponse('Note not found', 404);
-    }
-
-    // Update the note
-    const note = await prisma.note.update({
-      where: { id },
-      data: validatedData,
+    // Update note
+    const updatedNote = await prisma.note.update({
+      where: { id: noteId },
+      data: {
+        ...(validatedData.content && { content: validatedData.content }),
+        ...(validatedData.isPrivate !== undefined && { isPrivate: validatedData.isPrivate }),
+        ...(validatedData.mentions && { mentions: validatedData.mentions }),
+      },
       include: {
         author: {
           select: {
             id: true,
             name: true,
             email: true,
-          },
-        },
-        conversation: {
-          select: {
-            id: true,
-            status: true,
-            contact: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            image: true,
           },
         },
       },
     });
 
-    return NextResponse.json(note);
+    // Format response
+    const formattedNote = {
+      id: updatedNote.id,
+      content: updatedNote.content,
+      isPrivate: updatedNote.isPrivate,
+      authorId: updatedNote.authorId,
+      authorName: updatedNote.author.name || updatedNote.author.email,
+      mentions: updatedNote.mentions,
+      createdAt: updatedNote.createdAt.toISOString(),
+      updatedAt: updatedNote.updatedAt.toISOString(),
+    };
+
+    return NextResponse.json(formattedNote);
   } catch (error) {
-    return handleApiError(error, 'PUT /api/notes/[id]');
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.issues },
+        { status: 400 }
+      );
+    }
+
+    console.error('Error updating note:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+/**
+ * DELETE /api/notes/[id]
+ * Delete a note
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await params;
+    // For now, allow deletion without strict auth check
+    // TODO: Add proper authentication when auth is fully implemented
+    const { id: noteId } = await params;
 
-    // Check if note exists
+    // Get existing note
     const existingNote = await prisma.note.findUnique({
-      where: { id },
+      where: { id: noteId },
     });
 
     if (!existingNote) {
-      return createErrorResponse('Note not found', 404);
+      return NextResponse.json(
+        { error: 'Note not found' },
+        { status: 404 }
+      );
     }
 
-    // Delete the note
+    // Allow deletion for now (in production, check user permissions)
+    // if (existingNote.authorId !== currentUserId && !isAdmin) {
+    //   return NextResponse.json(
+    //     { error: 'Forbidden: You can only delete your own notes' },
+    //     { status: 403 }
+    //   );
+    // }
+
+    // Delete note
     await prisma.note.delete({
-      where: { id },
+      where: { id: noteId },
     });
 
-    return NextResponse.json({ message: 'Note deleted successfully' });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return handleApiError(error, 'DELETE /api/notes/[id]');
+    console.error('Error deleting note:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
