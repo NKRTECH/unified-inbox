@@ -84,6 +84,25 @@ export class MessageService {
       if (result.success && result.storedMessage && !options.skipNotification) {
         // Trigger real-time notifications
         await this.notifyMessageReceived(result.storedMessage);
+        
+        // Broadcast via WebSocket (only in server environment)
+        if (typeof window === 'undefined') {
+          try {
+            const { broadcastNewMessage } = await import('@/lib/websocket/broadcast');
+            broadcastNewMessage({
+              id: result.storedMessage.id,
+              conversationId: result.storedMessage.conversationId,
+              content: result.storedMessage.content,
+              channel: result.storedMessage.channel,
+              direction: result.storedMessage.direction,
+              status: result.storedMessage.status,
+              senderId: result.storedMessage.senderId,
+              createdAt: result.storedMessage.createdAt.toISOString(),
+            });
+          } catch (error) {
+            console.warn('WebSocket broadcast failed:', error);
+          }
+        }
       }
       
       return result;
@@ -132,6 +151,25 @@ export class MessageService {
         };
 
         const processingResult = await this.normalizationService.processMessage(rawMessage);
+        
+        // Broadcast via WebSocket (only in server environment)
+        if (processingResult.success && processingResult.storedMessage && typeof window === 'undefined') {
+          try {
+            const { broadcastMessageSent } = await import('@/lib/websocket/broadcast');
+            broadcastMessageSent({
+              id: processingResult.storedMessage.id,
+              conversationId: processingResult.storedMessage.conversationId,
+              content: processingResult.storedMessage.content,
+              channel: processingResult.storedMessage.channel,
+              direction: processingResult.storedMessage.direction,
+              status: processingResult.storedMessage.status,
+              senderId: processingResult.storedMessage.senderId,
+              createdAt: processingResult.storedMessage.createdAt.toISOString(),
+            });
+          } catch (error) {
+            console.warn('WebSocket broadcast failed:', error);
+          }
+        }
         
         return {
           ...sendResult,
