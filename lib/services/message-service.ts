@@ -19,7 +19,7 @@ import {
   MessageDirection,
   MessageStatus
 } from '@/lib/integrations/types';
-import { createSender } from '@/lib/integrations/factory';
+import { createSender } from '@/lib/integrations';
 
 /**
  * Message processing options
