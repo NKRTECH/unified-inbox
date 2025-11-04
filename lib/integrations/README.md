@@ -80,10 +80,10 @@ if (result.success) {
 
 ```typescript
 import { registerSender, ChannelType } from '@/lib/integrations';
-import { TwilioSMSSender } from './twilio/sms-sender';
+import { TwilioSmsSender } from './twilio/sms-sender';
 
 // Register Twilio SMS implementation
-registerSender(ChannelType.SMS, () => new TwilioSMSSender());
+registerSender(ChannelType.SMS, () => new TwilioSmsSender());
 ```
 
 ### Implementing a Channel Sender
