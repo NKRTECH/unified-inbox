@@ -49,6 +49,9 @@ export {
   integrationRegistry
 } from './factory';
 
+// Twilio integration (auto-registers when imported)
+import './twilio';
+
 /**
  * Example usage:
  * 

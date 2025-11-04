@@ -284,7 +284,7 @@ export class MessageNormalizationService {
           normalizedAt: message.normalizedAt.toISOString(),
           processingMetadata: message.processingMetadata
         },
-        attachments: message.attachments || [],
+        attachments: message.attachments ? JSON.parse(JSON.stringify(message.attachments)) : null,
         status: message.status,
         scheduledFor: message.scheduledFor,
         sentAt: message.sentAt,
