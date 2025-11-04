@@ -28,6 +28,16 @@ export * from '../utils/message-utils';
 // Presence service
 export { presenceService, type PresenceUser, type PresenceState } from './presence-service';
 
+// Analytics service
+export {
+  analyticsService,
+  AnalyticsService,
+  type AnalyticsMetrics,
+  type ChannelMetrics,
+  type ResponseTimeDataPoint,
+  type DateRangeFilter
+} from './analytics-service';
+
 /**
  * Example usage:
  * 
