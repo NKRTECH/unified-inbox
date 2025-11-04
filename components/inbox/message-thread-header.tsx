@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useConversation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
+import { ContactProfileModal } from '@/components/contacts/contact-profile-modal';
 
 interface MessageThreadHeaderProps {
   conversationId: string;
@@ -12,6 +15,7 @@ interface MessageThreadHeaderProps {
  */
 export function MessageThreadHeader({ conversationId }: MessageThreadHeaderProps) {
   const { data: conversation, isLoading } = useConversation(conversationId);
+  const [showContactProfile, setShowContactProfile] = useState(false);
 
   if (isLoading) {
     return (
@@ -106,36 +110,61 @@ export function MessageThreadHeader({ conversationId }: MessageThreadHeaderProps
   };
 
   return (
-    <div className="p-4 border-b border-gray-200 bg-white">
-      <div className="flex items-center justify-between">
-        {/* Contact Info */}
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-medium text-white">
-              {getInitials(contactName)}
-            </span>
-          </div>
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">{contactName}</h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              {contact.phone && <span>{contact.phone}</span>}
-              {contact.phone && contact.email && <span>•</span>}
-              {contact.email && <span>{contact.email}</span>}
+    <>
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between">
+          {/* Contact Info */}
+          <button
+            onClick={() => setShowContactProfile(true)}
+            className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+          >
+            <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-medium text-white">
+                {getInitials(contactName)}
+              </span>
             </div>
-          </div>
-        </div>
+            <div className="text-left">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                {contactName}
+                <UserCircleIcon className="h-5 w-5 text-gray-400" />
+              </h3>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                {contact.phone && <span>{contact.phone}</span>}
+                {contact.phone && contact.email && <span>•</span>}
+                {contact.email && <span>{contact.email}</span>}
+              </div>
+            </div>
+          </button>
 
-        {/* Status and Priority Badges */}
-        <div className="flex items-center space-x-2">
-          {getPriorityBadge()}
-          {getStatusBadge()}
-          {assignedUser && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              👤 {assignedUser.name || assignedUser.email}
-            </span>
-          )}
+          {/* Status and Priority Badges */}
+          <div className="flex items-center space-x-2">
+            {getPriorityBadge()}
+            {getStatusBadge()}
+            {assignedUser && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                👤 {assignedUser.name || assignedUser.email}
+              </span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Contact Profile Modal */}
+      {contact && (
+        <ContactProfileModal
+          contactId={contact.id}
+          isOpen={showContactProfile}
+          onClose={() => setShowContactProfile(false)}
+          onStartCall={(contactId, phone) => {
+            console.log('Start call:', contactId, phone);
+            // VoIP integration
+          }}
+          onSendMessage={(contactId) => {
+            setShowContactProfile(false);
+            // Already in conversation
+          }}
+        />
+      )}
+    </>
   );
 }
