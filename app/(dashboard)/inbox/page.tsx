@@ -10,6 +10,7 @@ import {
 import { useConversation, useWebSocket, useAuthStatus } from '@/lib/hooks';
 import { NoteEditor } from '@/components/notes/note-editor';
 import { NoteList } from '@/components/notes/note-list';
+import { ConversationPresence } from '@/components/presence/conversation-presence';
 import { ChatBubbleLeftIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 type TabType = 'messages' | 'notes';
@@ -36,10 +37,21 @@ export default function InboxPage() {
   const { user } = useAuthStatus();
   
   // WebSocket real-time updates - ENABLED
-  const { isConnected } = useWebSocket({
+  const { isConnected, joinConversation, leaveConversation, client: wsClient } = useWebSocket({
     userId: user?.id || '',
     enabled: !!user?.id,
   });
+
+  // Join conversation when selected
+  useEffect(() => {
+    if (selectedConversationId && user && wsClient) {
+      joinConversation(selectedConversationId, user.name || user.email, user.email);
+      
+      return () => {
+        leaveConversation(selectedConversationId);
+      };
+    }
+  }, [selectedConversationId, user, wsClient, joinConversation, leaveConversation]);
 
   // Fetch notes when conversation changes or notes tab is selected
   useEffect(() => {
@@ -156,6 +168,20 @@ export default function InboxPage() {
               {/* Thread header with tabs */}
               <div className="border-b border-gray-200">
                 <MessageThreadHeader conversationId={selectedConversationId} />
+                
+                {/* Presence indicator */}
+                {user && (
+                  <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                    <ConversationPresence
+                      conversationId={selectedConversationId}
+                      userId={user.id}
+                      userName={user.name || user.email}
+                      userEmail={user.email}
+                      wsClient={wsClient}
+                      showText={true}
+                    />
+                  </div>
+                )}
                 
                 {/* Tab navigation */}
                 <div className="flex border-t border-gray-200">

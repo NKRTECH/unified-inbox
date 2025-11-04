@@ -12,3 +12,4 @@ export * from './use-query-invalidation';
 // Real-time hooks
 export * from './use-websocket';
 export * from './use-typing-indicator';
+export * from './use-presence';

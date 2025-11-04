@@ -236,10 +236,10 @@ export class WebSocketClient {
   /**
    * Join a conversation room
    */
-  joinConversation(conversationId: string) {
+  joinConversation(conversationId: string, userName: string, userEmail?: string) {
     this.send({
       type: WebSocketEventType.USER_JOINED,
-      payload: { userId: this.userId, conversationId },
+      payload: { userId: this.userId, conversationId, userName, userEmail },
       timestamp: new Date().toISOString(),
       conversationId,
     });
@@ -252,6 +252,23 @@ export class WebSocketClient {
     this.send({
       type: WebSocketEventType.USER_LEFT,
       payload: { userId: this.userId, conversationId },
+      timestamp: new Date().toISOString(),
+      conversationId,
+    });
+  }
+
+  /**
+   * Update presence status
+   */
+  updatePresence(
+    conversationId: string,
+    status: 'viewing' | 'editing',
+    userName: string,
+    userEmail?: string
+  ) {
+    this.send({
+      type: WebSocketEventType.PRESENCE_UPDATE,
+      payload: { userId: this.userId, conversationId, status, userName, userEmail },
       timestamp: new Date().toISOString(),
       conversationId,
     });

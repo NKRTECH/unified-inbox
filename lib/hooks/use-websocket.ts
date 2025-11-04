@@ -26,7 +26,7 @@ interface UseWebSocketOptions {
 
 interface UseWebSocketReturn {
   isConnected: boolean;
-  joinConversation: (conversationId: string) => void;
+  joinConversation: (conversationId: string, userName?: string, userEmail?: string) => void;
   leaveConversation: (conversationId: string) => void;
   sendTypingStart: (conversationId: string, userName: string) => void;
   sendTypingStop: (conversationId: string, userName: string) => void;
@@ -215,8 +215,8 @@ export function useWebSocket({
   /**
    * Join a conversation room
    */
-  const joinConversation = useCallback((conversationId: string) => {
-    wsClientRef.current?.joinConversation(conversationId);
+  const joinConversation = useCallback((conversationId: string, userName?: string, userEmail?: string) => {
+    wsClientRef.current?.joinConversation(conversationId, userName || 'Unknown', userEmail);
   }, []);
 
   /**

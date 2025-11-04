@@ -10,7 +10,10 @@ import {
   WebSocketMessage,
   WebSocketEventType,
   WebSocketClient,
+  PresencePayload,
+  PresenceStatePayload,
 } from './types';
+import { presenceService } from '../services/presence-service';
 
 type UpgradeListener = (
   request: IncomingMessage,
@@ -178,6 +181,21 @@ class WebSocketManager {
       case WebSocketEventType.USER_JOINED:
         if (message.conversationId) {
           client.conversationIds.add(message.conversationId);
+          
+          // Update presence
+          const payload = message.payload as PresencePayload;
+          presenceService.updatePresence(
+            message.conversationId,
+            client.userId,
+            payload.userName || 'Unknown',
+            'viewing',
+            payload.userEmail
+          );
+          
+          // Send current presence state to the joining user
+          this.sendPresenceState(clientId, message.conversationId);
+          
+          // Broadcast join to others
           this.broadcastToConversation(message.conversationId, message, clientId);
         }
         break;
@@ -185,6 +203,28 @@ class WebSocketManager {
       case WebSocketEventType.USER_LEFT:
         if (message.conversationId) {
           client.conversationIds.delete(message.conversationId);
+          
+          // Remove presence
+          presenceService.removePresence(message.conversationId, client.userId);
+          
+          this.broadcastToConversation(message.conversationId, message, clientId);
+        }
+        break;
+
+      case WebSocketEventType.PRESENCE_UPDATE:
+        if (message.conversationId) {
+          const payload = message.payload as PresencePayload;
+          
+          // Update presence status
+          presenceService.updatePresence(
+            message.conversationId,
+            client.userId,
+            payload.userName || 'Unknown',
+            payload.status || 'viewing',
+            payload.userEmail
+          );
+          
+          // Broadcast presence update
           this.broadcastToConversation(message.conversationId, message, clientId);
         }
         break;
@@ -202,11 +242,42 @@ class WebSocketManager {
   }
 
   /**
+   * Send current presence state to a client
+   */
+  private sendPresenceState(clientId: string, conversationId: string) {
+    const client = this.clients.get(clientId);
+    if (!client) return;
+
+    const presenceUsers = presenceService.getConversationPresence(conversationId);
+    
+    const statePayload: PresenceStatePayload = {
+      conversationId,
+      users: presenceUsers.map((user) => ({
+        userId: user.userId,
+        userName: user.userName,
+        userEmail: user.userEmail,
+        status: user.status,
+        lastSeen: user.lastSeen.toISOString(),
+      })),
+    };
+
+    client.send({
+      type: WebSocketEventType.PRESENCE_STATE,
+      payload: statePayload,
+      timestamp: new Date().toISOString(),
+      conversationId,
+    });
+  }
+
+  /**
    * Handle client disconnection
    */
   private handleDisconnection(clientId: string) {
     const client = this.clients.get(clientId);
     if (!client) return;
+
+    // Remove user from all presence tracking
+    presenceService.removeUserFromAll(client.userId);
 
     // Notify all conversations the user was in
     client.conversationIds.forEach((conversationId) => {
