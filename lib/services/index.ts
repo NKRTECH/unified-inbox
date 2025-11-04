@@ -25,6 +25,9 @@ export {
 // Re-export message utilities
 export * from '../utils/message-utils';
 
+// Presence service
+export { presenceService, type PresenceUser, type PresenceState } from './presence-service';
+
 /**
  * Example usage:
  * 

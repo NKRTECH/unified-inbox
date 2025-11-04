@@ -19,6 +19,8 @@ export enum WebSocketEventType {
   // Presence events
   USER_JOINED = 'user:joined',
   USER_LEFT = 'user:left',
+  PRESENCE_UPDATE = 'presence:update',
+  PRESENCE_STATE = 'presence:state',
   
   // Connection events
   CONNECTED = 'connected',
@@ -54,7 +56,20 @@ export interface TypingPayload {
 export interface PresencePayload {
   userId: string;
   userName: string;
+  userEmail?: string;
   conversationId?: string;
+  status?: 'viewing' | 'editing';
+}
+
+export interface PresenceStatePayload {
+  conversationId: string;
+  users: Array<{
+    userId: string;
+    userName: string;
+    userEmail?: string;
+    status: 'viewing' | 'editing';
+    lastSeen: string;
+  }>;
 }
 
 export interface ConversationUpdatePayload {
