@@ -9,12 +9,16 @@ import {
   Cog6ToothIcon,
   ChatBubbleLeftRightIcon,
   PuzzlePieceIcon,
-  PhoneIcon
+  PhoneIcon,
+  CalendarIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Inbox', href: '/inbox', icon: InboxIcon },
   { name: 'Contacts', href: '/contacts', icon: UserGroupIcon },
+  { name: 'Scheduled', href: '/scheduled', icon: CalendarIcon },
+  { name: 'Templates', href: '/templates', icon: DocumentTextIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Integrations', href: '/settings/integrations', icon: PuzzlePieceIcon },
   { name: 'Test Composer', href: '/test-composer', icon: ChatBubbleLeftRightIcon },

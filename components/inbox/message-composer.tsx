@@ -28,7 +28,8 @@ import {
   Phone,
   MessageSquare,
   Info,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { 
   isPhoneNumberVerified, 
@@ -39,7 +40,10 @@ import {
 
 interface MessageComposerProps {
   recipientNumber?: string;
+  conversationId?: string;
+  contactId?: string;
   onMessageSent?: (result: any) => void;
+  onMessageScheduled?: (result: any) => void;
   className?: string;
 }
 
@@ -51,14 +55,18 @@ interface TrialStatus {
 }
 
 export default function MessageComposer({ 
-  recipientNumber = '', 
+  recipientNumber = '',
+  conversationId,
+  contactId,
   onMessageSent,
+  onMessageScheduled,
   className = ''
 }: MessageComposerProps) {
   const [message, setMessage] = useState('');
   const [recipient, setRecipient] = useState(recipientNumber);
   const [channel, setChannel] = useState<ChannelType>('SMS');
   const [sending, setSending] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>({ isTrial: false, verifiedNumbers: [] });
   const [showTrialWarning, setShowTrialWarning] = useState(false);
   const [isRecipientVerified, setIsRecipientVerified] = useState(false);
@@ -344,12 +352,12 @@ export default function MessageComposer({
           </Alert>
         )}
 
-        {/* Send Button */}
-        <div className="pt-2">
+        {/* Action Buttons */}
+        <div className="pt-2 flex gap-3">
           <Button 
             onClick={handleSend}
             disabled={sending || !message.trim() || !recipient.trim()}
-            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
             size="lg"
           >
             {sending ? (
@@ -361,12 +369,153 @@ export default function MessageComposer({
               <>
                 {getChannelIcon(channel)}
                 <Send className="h-4 w-4 ml-2 text-white" />
-                <span className="text-white">Send {channel} Message</span>
+                <span className="text-white">Send Now</span>
               </>
             )}
           </Button>
+          
+          <Button 
+            onClick={() => setShowScheduleModal(true)}
+            disabled={sending || !message.trim() || !recipient.trim()}
+            variant="outline"
+            className="h-12 px-6 text-base font-semibold border-2 border-purple-600 text-purple-600 hover:bg-purple-50 disabled:border-gray-400 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            size="lg"
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Schedule
+          </Button>
         </div>
       </div>
+
+      {/* Schedule Modal */}
+      {showScheduleModal && (
+        <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Clock className="h-6 w-6 text-purple-600" />
+                Schedule Message
+              </DialogTitle>
+              <DialogDescription>
+                Schedule this message to be sent at a specific date and time
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Date Input */}
+              <div>
+                <Label htmlFor="schedule-date" className="text-sm font-semibold text-gray-900">
+                  Date
+                </Label>
+                <Input
+                  id="schedule-date"
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  className="mt-2"
+                />
+              </div>
+              
+              {/* Time Input */}
+              <div>
+                <Label htmlFor="schedule-time" className="text-sm font-semibold text-gray-900">
+                  Time
+                </Label>
+                <Input
+                  id="schedule-time"
+                  type="time"
+                  className="mt-2"
+                />
+              </div>
+              
+              {/* Message Preview */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="text-sm font-bold text-gray-900 mb-2">Message Preview</h4>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{message}</p>
+                <div className="mt-2 text-xs text-gray-500">
+                  To: {recipient} via {channel}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowScheduleModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={async () => {
+                  const dateInput = document.getElementById('schedule-date') as HTMLInputElement;
+                  const timeInput = document.getElementById('schedule-time') as HTMLInputElement;
+                  
+                  if (!dateInput.value || !timeInput.value) {
+                    alert('Please select both date and time');
+                    return;
+                  }
+                  
+                  const scheduledFor = new Date(`${dateInput.value}T${timeInput.value}`);
+                  
+                  if (scheduledFor <= new Date()) {
+                    alert('Scheduled time must be in the future');
+                    return;
+                  }
+                  
+                  if (!conversationId || !contactId) {
+                    alert('Missing conversation or contact information');
+                    return;
+                  }
+                  
+                  setSending(true);
+                  try {
+                    const response = await fetch('/api/messages/schedule', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        conversationId,
+                        contactId,
+                        channel,
+                        content: message,
+                        scheduledFor: scheduledFor.toISOString(),
+                      }),
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                      setMessage('');
+                      setShowScheduleModal(false);
+                      onMessageScheduled?.(result);
+                      alert('Message scheduled successfully!');
+                    } else {
+                      alert(result.error || 'Failed to schedule message');
+                    }
+                  } catch (error) {
+                    alert('Failed to schedule message. Please try again.');
+                    console.error('Schedule error:', error);
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={sending}
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Schedule Message
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Trial Warning Dialog */}
       <Dialog open={showTrialWarning} onOpenChange={setShowTrialWarning}>
