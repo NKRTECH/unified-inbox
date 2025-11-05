@@ -64,7 +64,7 @@ export async function getAuthenticatedUser(
       id: session.user.id,
       email: session.user.email,
       name: session.user.name,
-      role: session.user.role as UserRole,
+      role: (session.user as any).role as UserRole,
     };
   } catch (error) {
     console.error('Error getting authenticated user:', error);

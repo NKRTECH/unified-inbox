@@ -28,13 +28,14 @@ export async function validateBody<T>(
     return { success: true, data };
   } catch (error) {
     if (error instanceof ZodError) {
+      const rawDetails = (error as any).issues || (error as any).errors || [];
       return {
         success: false,
         error: NextResponse.json(
           {
             error: 'Validation error',
-            details: error.errors.map(err => ({
-              path: err.path.join('.'),
+            details: rawDetails.map((err: any) => ({
+              path: (err.path || []).join?.('.') || '',
               message: err.message,
             })),
           },
@@ -67,13 +68,14 @@ export function validateQuery<T>(
     return { success: true, data };
   } catch (error) {
     if (error instanceof ZodError) {
+      const rawDetails = (error as any).issues || (error as any).errors || [];
       return {
         success: false,
         error: NextResponse.json(
           {
             error: 'Invalid query parameters',
-            details: error.errors.map(err => ({
-              path: err.path.join('.'),
+            details: rawDetails.map((err: any) => ({
+              path: (err.path || []).join?.('.') || '',
               message: err.message,
             })),
           },
@@ -121,7 +123,7 @@ export function sanitizeObject<T extends Record<string, any>>(
   obj: T,
   htmlFields: string[] = []
 ): T {
-  const sanitized = { ...obj };
+  const sanitized: any = { ...obj };
 
   for (const [key, value] of Object.entries(sanitized)) {
     if (typeof value === 'string') {

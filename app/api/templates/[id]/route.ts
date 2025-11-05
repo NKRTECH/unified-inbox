@@ -22,10 +22,7 @@ const updateTemplateSchema = z.object({
  * GET /api/templates/[id]
  * Get a specific template
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: { params: any }) {
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -39,7 +36,12 @@ export async function GET(
       );
     }
 
-    const template = await templateService.getTemplate(params.id);
+    // Normalize params (Next.js may provide params as a Promise)
+    let params = context.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
+    const template = await templateService.getTemplate(params?.id);
 
     if (!template) {
       return NextResponse.json(
@@ -75,10 +77,7 @@ export async function GET(
  * PATCH /api/templates/[id]
  * Update a template
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, context: { params: any }) {
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -93,7 +92,7 @@ export async function PATCH(
     }
 
     // Only EDITOR and ADMIN can update templates
-    if (session.user.role === 'VIEWER') {
+    if ((session.user as any).role === 'VIEWER') {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
@@ -105,8 +104,12 @@ export async function PATCH(
     const validatedData = updateTemplateSchema.parse(body);
 
     // Update the template
+    let params = context.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
     const updatedTemplate = await templateService.updateTemplate(
-      params.id,
+      params?.id,
       validatedData as UpdateTemplateRequest
     );
 
@@ -122,7 +125,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           error: 'Validation error',
-          details: error.errors,
+          details: (error as any).issues || (error as any).errors,
         },
         { status: 400 }
       );
@@ -141,10 +144,7 @@ export async function PATCH(
  * DELETE /api/templates/[id]
  * Delete a template
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: { params: any }) {
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -159,15 +159,19 @@ export async function DELETE(
     }
 
     // Only ADMIN can delete templates
-    if (session.user.role !== 'ADMIN') {
+    if ((session.user as any).role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
       );
     }
 
+    let params = context.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
     // Delete the template
-    await templateService.deleteTemplate(params.id);
+    await templateService.deleteTemplate(params?.id);
 
     return NextResponse.json({
       success: true,

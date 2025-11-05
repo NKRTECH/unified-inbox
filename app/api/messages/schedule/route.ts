@@ -17,14 +17,14 @@ const scheduleMessageSchema = z.object({
   content: z.string().min(1).max(10000),
   scheduledFor: z.string().datetime(),
   templateId: z.string().optional(),
-  variables: z.record(z.any()).optional(),
+  variables: z.unknown().optional(),
   attachments: z.array(z.object({
     filename: z.string(),
     contentType: z.string(),
     size: z.number(),
     url: z.string().url(),
   })).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.unknown().optional(),
 });
 
 /**
@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
       ...validatedData,
       senderId: session.user.id,
       scheduledFor: new Date(validatedData.scheduledFor),
+      // zod returns a union of string literal types; cast to ChannelType for the internal type
+      channel: validatedData.channel as any,
+      variables: validatedData.variables as any,
+      metadata: validatedData.metadata as any,
     };
 
     // Schedule the message
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Validation error',
-          details: error.errors,
+          details: (error as any).issues || (error as any).errors,
         },
         { status: 400 }
       );

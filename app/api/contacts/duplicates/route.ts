@@ -122,7 +122,11 @@ export async function GET(request: NextRequest) {
       if (processedIds.has(contact1.id)) continue;
 
       const group: DuplicateGroup['contacts'] = [contact1];
-      let bestSimilarity = { score: 0, reasons: [], matchedFields: [] };
+      let bestSimilarity: { score: number; reasons: string[]; matchedFields: string[] } = {
+        score: 0,
+        reasons: [],
+        matchedFields: [],
+      };
 
       for (let j = i + 1; j < contacts.length; j++) {
         const contact2 = contacts[j];

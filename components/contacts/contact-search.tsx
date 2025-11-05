@@ -23,7 +23,8 @@ interface Contact {
 }
 
 interface ContactSearchProps {
-  onSelectContact: (contact: Contact) => void;
+  // Accept a flexible contact shape to avoid duplicate-type conflicts across modules
+  onSelectContact: (contact: any) => void;
   placeholder?: string;
   autoFocus?: boolean;
   showRecentContacts?: boolean;
@@ -36,7 +37,7 @@ export function ContactSearch({
   showRecentContacts = true,
 }: ContactSearchProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Contact[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -216,7 +217,7 @@ export function ContactSearch({
                 </div>
                 {contact.tags && contact.tags.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {contact.tags.slice(0, 3).map((tag) => (
+                    {contact.tags.slice(0, 3).map((tag: string) => (
                       <span
                         key={tag}
                         className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full"
