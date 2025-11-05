@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { presenceService } from '@/lib/services/presence-service';
-import { auth } from '@/lib/auth/auth';
+import { requireAuth } from '@/lib/middleware/rbac';
 
 /**
  * GET /api/presence/[conversationId]
@@ -16,14 +16,9 @@ export async function GET(
   { params }: { params: { conversationId: string } }
 ) {
   try {
-    // Verify authentication
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) return authResult;
 
     const { conversationId } = params;
 

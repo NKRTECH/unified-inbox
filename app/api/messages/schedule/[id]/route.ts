@@ -22,8 +22,9 @@ const updateScheduledMessageSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -37,7 +38,7 @@ export async function GET(
       );
     }
 
-    const scheduledMessage = await schedulingService.getScheduledMessage(params.id);
+    const scheduledMessage = await schedulingService.getScheduledMessage(id);
 
     if (!scheduledMessage) {
       return NextResponse.json(
@@ -69,8 +70,9 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -102,7 +104,7 @@ export async function PATCH(
 
     // Update the scheduled message
     const updatedMessage = await schedulingService.updateScheduledMessage(
-      params.id,
+      id,
       updates
     );
 
@@ -139,8 +141,9 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // Get authenticated user
     const session = await auth.api.getSession({
@@ -155,7 +158,7 @@ export async function DELETE(
     }
 
     // Cancel the scheduled message
-    await schedulingService.cancelScheduledMessage(params.id);
+    await schedulingService.cancelScheduledMessage(id);
 
     return NextResponse.json({
       success: true,

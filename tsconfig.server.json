@@ -1,10 +1,13 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": ".",
-    "noEmit": false
+    "noEmit": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true
   },
   "include": ["server.ts", "lib/websocket/**/*"],
   "exclude": ["node_modules", ".next", "dist"]

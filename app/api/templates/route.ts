@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { templateService, CreateTemplateRequest } from '@/lib/services/template-service';
-import { auth } from '@/lib/auth';
+import { requirePermission, requireAuth } from '@/lib/middleware/rbac';
 import { z } from 'zod';
 
 // Validation schema
@@ -23,25 +23,10 @@ const createTemplateSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Only EDITOR and ADMIN can create templates
-    if (session.user.role === 'VIEWER') {
-      return NextResponse.json(
-        { error: 'Insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    // Require write permission for creating templates
+    const authResult = await requirePermission(request, 'write');
+    if (authResult instanceof NextResponse) return authResult;
+    const { user } = authResult;
 
     // Parse and validate request body
     const body = await request.json();
@@ -50,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Create template request
     const createRequest: CreateTemplateRequest = {
       ...validatedData,
-      createdBy: session.user.id,
+      createdBy: user.id,
     };
 
     // Create the template
@@ -89,17 +74,9 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // Get authenticated user
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // Require authentication for reading templates
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) return authResult;
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);

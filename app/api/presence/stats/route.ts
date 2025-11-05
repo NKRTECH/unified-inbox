@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { presenceService } from '@/lib/services/presence-service';
-import { auth } from '@/lib/auth/auth';
+import { requireAdmin } from '@/lib/middleware/rbac';
 
 /**
  * GET /api/presence/stats
@@ -13,19 +13,9 @@ import { auth } from '@/lib/auth/auth';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is admin
-    if (session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // Require admin role
+    const authResult = await requireAdmin(request);
+    if (authResult instanceof NextResponse) return authResult;
 
     // Get statistics
     const stats = presenceService.getStats();

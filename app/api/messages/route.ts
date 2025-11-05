@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CreateMessageSchema, MessageQuerySchema } from '@/lib/types/message';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
+import { requireAuth, requirePermission } from '@/lib/middleware/rbac';
 
 export async function GET(request: NextRequest) {
+  // Require authentication for reading messages
+  const authResult = await requireAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
@@ -99,6 +104,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Require write permission for creating messages
+  const authResult = await requirePermission(request, 'write');
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     
