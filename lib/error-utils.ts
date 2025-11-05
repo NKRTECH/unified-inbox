@@ -111,8 +111,9 @@ export function createStructuredErrorResponse(
  * Handle Zod validation errors
  */
 function handleZodError(error: ZodError): NextResponse {
-  const details = error.errors.map(err => ({
-    path: err.path.join('.'),
+  const rawDetails = (error as any).issues || (error as any).errors || [];
+  const details = rawDetails.map((err: any) => ({
+    path: (err.path || []).join?.('.') || '',
     message: err.message,
     code: err.code,
   }));

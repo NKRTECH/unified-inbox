@@ -117,11 +117,11 @@ export async function POST(request: NextRequest) {
         
         // Send via the integration
         const sendResult = await messageService.sendMessage({
-          channel: validatedData.channel,
+          channel: validatedData.channel as any,
           to: getRecipientForChannel(validatedData.channel, contact),
           content: validatedData.content,
           metadata: validatedData.metadata,
-          attachments: validatedData.attachments,
+          attachments: validatedData.attachments as any,
         });
 
         // Update message status based on send result

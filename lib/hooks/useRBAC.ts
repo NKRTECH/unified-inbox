@@ -47,7 +47,7 @@ export interface RBACHookReturn {
  */
 export function useRBAC(): RBACHookReturn {
   const { data: session, isPending } = useSession();
-  const userRole = (session?.user?.role as UserRole) || null;
+  const userRole = ((session?.user as any)?.role as UserRole) || null;
 
   // If no role, user has no permissions
   if (!userRole) {

@@ -13,7 +13,7 @@ import { z } from 'zod';
 const updateScheduledMessageSchema = z.object({
   scheduledFor: z.string().datetime().optional(),
   content: z.string().min(1).max(10000).optional(),
-  variables: z.record(z.any()).optional(),
+  variables: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -120,7 +120,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           error: 'Validation error',
-          details: error.errors,
+          details: (error as any).issues || (error as any).errors,
         },
         { status: 400 }
       );

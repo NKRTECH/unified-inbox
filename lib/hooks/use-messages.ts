@@ -14,7 +14,7 @@ export const messageKeys = {
   all: ['messages'] as const,
   lists: () => [...messageKeys.all, 'list'] as const,
   list: (params?: MessageQueryInput) => [...messageKeys.lists(), params] as const,
-  infinite: (params?: Omit<MessageQueryInput, 'page'>) => 
+  infinite: (params?: Partial<Omit<MessageQueryInput, 'page'>>) => 
     [...messageKeys.all, 'infinite', params] as const,
   details: () => [...messageKeys.all, 'detail'] as const,
   detail: (id: string) => [...messageKeys.details(), id] as const,
@@ -110,10 +110,15 @@ export function useMessages(params?: MessageQueryInput) {
   });
 }
 
-export function useInfiniteMessages(params?: Omit<MessageQueryInput, 'page'>) {
+export function useInfiniteMessages(params?: Partial<Omit<MessageQueryInput, 'page'>>) {
   return useInfiniteQuery({
     queryKey: messageKeys.infinite(params),
-    queryFn: ({ pageParam = 1 }) => fetchMessages({ ...params, page: pageParam }),
+    queryFn: ({ pageParam = 1 }) => {
+      // Ensure `limit` is present because MessageQueryInput requires it
+      const queryParams: any = { ...(params || {}), page: pageParam };
+      if (queryParams.limit === undefined) queryParams.limit = 20;
+      return fetchMessages(queryParams as MessageQueryInput);
+    },
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? page + 1 : undefined;
@@ -176,7 +181,11 @@ export function useSendMessage() {
         sentAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        sender: undefined, // Will be filled by server
+  senderId: null,
+  sender: undefined, // Will be filled by server
+  metadata: null,
+  attachments: null,
+  scheduledFor: null,
         contact: {
           id: newMessage.contactId,
           name: null,

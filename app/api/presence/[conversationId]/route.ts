@@ -11,16 +11,19 @@ import { requireAuth } from '@/lib/middleware/rbac';
  * GET /api/presence/[conversationId]
  * Get active users in a conversation
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { conversationId: string } }
-) {
+export async function GET(request: NextRequest, context: { params: any }) {
   try {
     // Require authentication
     const authResult = await requireAuth(request);
     if (authResult instanceof NextResponse) return authResult;
 
-    const { conversationId } = params;
+    // Next.js typing can vary: `context.params` may be a plain object or a Promise.
+    // Normalize it so we always have an object with `conversationId`.
+    let params = context.params;
+    if (params && typeof params.then === 'function') {
+      params = await params;
+    }
+    const { conversationId } = params || {};
 
     if (!conversationId) {
       return NextResponse.json(

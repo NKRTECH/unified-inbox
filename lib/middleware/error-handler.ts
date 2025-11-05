@@ -75,14 +75,14 @@ export const assert = {
     if (value === null || value === undefined) {
       throwError.notFound(message || 'Resource not found');
     }
-    return value;
+    return value as T;
   },
 
   isAuthenticated: (userId: string | null | undefined, message?: string): string => {
     if (!userId) {
       throwError.unauthorized(message || 'Authentication required');
     }
-    return userId;
+    return userId as string;
   },
 
   hasPermission: (condition: boolean, message?: string): void => {

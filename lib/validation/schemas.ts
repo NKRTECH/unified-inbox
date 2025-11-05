@@ -88,9 +88,9 @@ export const createContactSchema = z.object({
   name: schemas.name.optional(),
   phone: schemas.phone.optional(),
   email: schemas.email.optional(),
-  socialHandles: z.record(z.string()).optional(),
+  socialHandles: z.record(z.string(), z.string()).optional(),
   tags: z.array(z.string()).default([]),
-  customFields: z.record(z.any()).optional(),
+  customFields: z.record(z.string(), z.unknown()).optional(),
 }).refine(
   (data) => data.phone || data.email,
   'Either phone or email is required'
@@ -117,7 +117,7 @@ export const createMessageSchema = z.object({
   channel: channelEnum,
   direction: directionEnum,
   content: z.string().min(1, 'Message content is required').max(10000),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   attachments: z.array(z.object({
     url: schemas.url,
     type: z.string(),
@@ -225,7 +225,7 @@ export const createScheduledMessageSchema = z.object({
   messageId: schemas.id,
   scheduledFor: schemas.futureDate,
   templateId: schemas.id.optional(),
-  variables: z.record(z.string()).optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const updateScheduledMessageSchema = z.object({
@@ -308,5 +308,5 @@ export const bulkDeleteSchema = z.object({
 
 export const bulkUpdateSchema = z.object({
   ids: z.array(schemas.id).min(1).max(100),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.unknown()),
 });
