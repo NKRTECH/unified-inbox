@@ -4,6 +4,7 @@ import { CreateMessageSchema } from '@/lib/types/message';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { messageSendRateLimiter } from '@/lib/middleware/rate-limit';
 
 const SendMessageSchema = CreateMessageSchema.extend({
   // Override direction to always be OUTBOUND for sent messages
@@ -19,6 +20,12 @@ export async function POST(request: NextRequest) {
     
     if (!session?.user) {
       return createErrorResponse('Unauthorized - Please log in', 401);
+    }
+
+    // Apply rate limiting for message sending
+    const rateLimitResult = await messageSendRateLimiter(request, session.user.id);
+    if (rateLimitResult) {
+      return rateLimitResult;
     }
 
     const body = await request.json();

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { z } from "zod";
+import { requireAuth, requirePermission } from "@/lib/middleware/rbac";
 
 // Validation schema for creating/updating conversations
 const conversationSchema = z.object({
@@ -14,6 +15,10 @@ const conversationSchema = z.object({
 
 // GET /api/conversations - List all conversations with optional filtering
 export async function GET(request: NextRequest) {
+  // Require authentication for reading conversations
+  const authResult = await requireAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -93,6 +98,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/conversations - Create a new conversation
 export async function POST(request: NextRequest) {
+  // Require write permission for creating conversations
+  const authResult = await requirePermission(request, 'write');
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     const validatedData = conversationSchema.parse(body);

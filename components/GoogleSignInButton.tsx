@@ -17,22 +17,17 @@ export default function GoogleSignInButton({ className = "" }: GoogleSignInButto
     setError("");
 
     try {
-      const result = await signIn.social({
+      // Don't specify callbackURL - let Better Auth handle it
+      await signIn.social({
         provider: "google",
-        callbackURL: "/inbox",
       });
       
-      if (result.error) {
-        setError(result.error.message || "Google sign-in failed");
-      }
-      // Note: For OAuth, the redirect happens automatically
-      // so we don't need to manually redirect here
+      // OAuth redirect happens automatically
     } catch (err: unknown) {
       // eslint-disable-next-line no-console
       console.error("Google sign-in error:", err);
       const errorMessage = getErrorMessage(err);
       setError(errorMessage.includes("Google") ? errorMessage : "Google sign-in failed. Please try again.");
-    } finally {
       setIsLoading(false);
     }
   };

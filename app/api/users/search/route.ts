@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/middleware/rbac';
 
 /**
  * GET /api/users/search
@@ -13,7 +14,11 @@ import { prisma } from '@/lib/prisma';
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add authentication when auth is fully implemented
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
 
     // Get search query
     const searchParams = request.nextUrl.searchParams;

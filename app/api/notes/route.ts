@@ -2,13 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { handleApiError, createErrorResponse } from '@/lib/error-utils';
 import { CreateNoteSchema, NoteQuerySchema } from '@/lib/types/note';
+import { requireAuth } from '@/lib/middleware/rbac';
+import { validateBody, validateQuery, sanitizeObject } from '@/lib/middleware/validation';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const queryParams = Object.fromEntries(searchParams.entries());
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    // Validate query parameters
+    const queryResult = validateQuery(request, NoteQuerySchema);
+    if (!queryResult.success) {
+      return queryResult.error;
+    }
     
-    const validatedQuery = NoteQuerySchema.parse(queryParams);
+    const validatedQuery = queryResult.data;
     const { conversationId, authorId, isPrivate, page, limit } = validatedQuery;
 
     // Build where clause
@@ -70,8 +81,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const validatedData = CreateNoteSchema.parse(body);
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+
+    const { user } = authResult;
+
+    // Validate and sanitize request body
+    const bodyResult = await validateBody(request, CreateNoteSchema);
+    if (!bodyResult.success) {
+      return bodyResult.error;
+    }
+
+    // Sanitize content to prevent XSS
+    const validatedData = sanitizeObject(bodyResult.data, ['content']);
 
     // Verify conversation exists
     const conversation = await prisma.conversation.findUnique({

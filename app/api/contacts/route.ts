@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { z } from "zod";
+import { requireAuth, requirePermission } from "@/lib/middleware/rbac";
 
 // Validation schema for creating/updating contacts
 const contactSchema = z.object({
@@ -16,6 +17,10 @@ const contactSchema = z.object({
 
 // GET /api/contacts - List all contacts with optional filtering
 export async function GET(request: NextRequest) {
+  // Require authentication for reading contacts
+  const authResult = await requireAuth(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -74,6 +79,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/contacts - Create a new contact
 export async function POST(request: NextRequest) {
+  // Require write permission for creating contacts
+  const authResult = await requirePermission(request, 'write');
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     const validatedData = contactSchema.parse(body);
