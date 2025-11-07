@@ -40,4 +40,14 @@ export const auth = betterAuth({
   },
   secret: authSecret,
   baseURL: fallbackURL!,
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+    },
+  },
+  trustedOrigins: [
+    'http://localhost:3000',
+    'https://unified-inbox-nkr.vercel.app',
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ],
 });
