@@ -23,13 +23,24 @@ if (!baseURL && process.env.NODE_ENV === 'production') {
 }
 const fallbackURL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : baseURL;
 
+// Build trusted origins list
+const trustedOrigins = [
+  'http://localhost:3000',
+  'https://unified-inbox-nkr.vercel.app',
+];
+
+// Add Vercel preview URL if available
+if (process.env.VERCEL_URL) {
+  trustedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: process.env.NODE_ENV === 'production',
+    requireEmailVerification: false, // Disable for now to simplify deployment
     minPasswordLength: 8,
   },
   socialProviders: {
@@ -40,14 +51,5 @@ export const auth = betterAuth({
   },
   secret: authSecret,
   baseURL: fallbackURL!,
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-    },
-  },
-  trustedOrigins: [
-    'http://localhost:3000',
-    'https://unified-inbox-nkr.vercel.app',
-    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
-  ],
+  trustedOrigins,
 });
